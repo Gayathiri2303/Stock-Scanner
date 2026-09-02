@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 Stock Scanner Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ========== BASE ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* ========== HEADER ========== */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 { font-size: 24px; }
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .logout-btn {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .logout-btn:hover { background: #c82333; }
+        .dark-toggle {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .dark-toggle:hover { background: #555; }
+        .update-badge {
+            background: #28a745;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* ========== LOGIN ========== */
+        .login-box {
+            max-width: 400px;
+            margin: 100px auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .login-box h2 { margin-bottom: 20px; text-align: center; }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .login-box button:hover { background: #5a67d8; }
+        .login-error { color: #dc3545; text-align: center; margin-top: 10px; display: none; }
+
+        /* ========== TOP PICKS ========== */
+        .top-picks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .pick-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+        .pick-card .rank { font-size: 12px; color: #999; margin-bottom: 3px; }
+        .pick-card .ticker { font-size: 22px; font-weight: 700; }
+        .pick-card .name { color: #666; font-size: 14px; }
+        .pick-card .price { font-size: 20px; font-weight: 700; margin: 5px 0; }
+        .pick-card .change-up { color: #28a745; }
+        .pick-card .change-down { color: #dc3545; }
+        .pick-card .sector-badge {
+            background: #e9ecef;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-block;
+            color: #333;
+        }
+        .pick-card .rating-badge {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            display: inline-block;
+            margin-left: 5px;
+        }
+        .pick-card .score {
+            background: #667eea;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            display: inline-block;
+        }
+        .pick-card .target {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* ========== AI GRID ========== */
+        .ai-box { margin: 20px 0; }
+        .ai-box h3 { font-size: 20px; margin-bottom: 15px; }
+        .ai-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .ai-card {
+            background: #fff;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 5px solid #6f42c1;
+        }
+        .ai-card .ai-header { display: flex; justify-content: space-between; align-items: center; }
+        .ai-card .ai-ticker { font-size: 20px; font-weight: 700; }
+        .ai-card .ai-price { font-size: 14px; margin-top: 5px; }
+        .ai-card .ai-price strong { color: #222; }
+        .ai-card .ai-detail { font-size: 13px; margin-top: 3px; }
+        .ai-card .ai-detail strong { color: #222; }
+        .ai-card .ai-footer {
+            font-size: 11px;
+            color: #999;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
+
+        /* ========== WATCHLIST ========== */
+        .watchlist-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 5px solid #ff6b6b;
+        }
+        .watchlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 10px;
+        }
+        .watchlist-item {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .watchlist-item .wl-ticker { font-weight: 700; font-size: 14px; }
+        .watchlist-item .wl-price { font-weight: 600; font-size: 14px; }
+        .watchlist-item .wl-change { font-size: 13px; font-weight: 600; }
+        .watchlist-item .wl-change.up { color: #28a745; }
+        .watchlist-item .wl-change.down { color: #dc3545; }
+        .watchlist-item .wl-rating {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .watchlist-item .wl-remove {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .watchlist-item .wl-remove:hover { background: #c82333; }
+        .empty-watchlist { text-align: center; color: #999; padding: 20px; }
+
+        /* ========== SEASONAL ========== */
+        .seasonal-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 5px solid #ff6b6b;
+        }
+        .seasonal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+        }
+        .seasonal-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .seasonal-card .s-ticker { font-size: 17px; font-weight: 700; }
+        .seasonal-card .s-name { color: #666; font-size: 13px; }
+        .seasonal-card .s-best { color: #28a745; font-size: 13px; }
+        .seasonal-card .s-worst { color: #dc3545; font-size: 13px; }
+        .s-strength {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 5px;
+        }
+        .strength-high { background: #28a745; }
+        .strength-medium { background: #ffc107; color: #222 !important; }
+        .strength-low { background: #dc3545; }
+
+        /* ========== INVESTMENT ========== */
+        .investment-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 5px solid #28a745;
+        }
+        .investment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+        }
+        .investment-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .investment-item .ilabel { font-size: 11px; color: #666; }
+        .investment-item .ivalue { font-size: 16px; font-weight: 700; margin-top: 3px; }
+        .ivalue.highlight { color: #28a745; }
+        .ivalue.negative { color: #dc3545; }
+
+        /* ========== FILTERS ========== */
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+        .filters select, .filters input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            flex: 1;
+            min-width: 100px;
+        }
+        .filters button {
+            padding: 8px 20px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .filters button:hover { background: #5a67d8; }
+
+        /* ========== CHARTS ========== */
+        .chart-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
+        .chart-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        .chart-box canvas { max-height: 200px; }
+
+        /* ========== STOCK GRID ========== */
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stock-card {
+            background: #fff;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            transition: transform 0.3s;
+        }
+        .stock-card:hover { transform: translateY(-5px); }
+        .stock-card .star {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .stock-card .s-ticker { font-size: 17px; font-weight: 700; }
+        .stock-card .s-name { color: #666; font-size: 13px; }
+        .stock-card .s-price { font-size: 20px; font-weight: 700; margin: 5px 0; }
+        .stock-card .s-change { font-size: 14px; font-weight: 600; }
+        .stock-card .s-change.up { color: #28a745; }
+        .stock-card .s-change.down { color: #dc3545; }
+        .stock-card .s-sector {
+            background: #e9ecef;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            display: inline-block;
+            color: #333;
+        }
+        .stock-card .s-rating {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            display: inline-block;
+        }
+        .stock-card .s-footer { font-size: 12px; color: #666; margin-top: 5px; }
+        .stock-card .s-updated { font-size: 10px; color: #999; margin-top: 3px; }
+
+        .loading { text-align: center; padding: 30px; color: #666; font-size: 15px; }
+        .hidden { display: none; }
+
+        /* ========== DARK MODE ========== */
+        body.dark-mode {
+            background: #121212 !important;
+            color: #e8e8e8 !important;
+        }
+        body.dark-mode .header { background: linear-gradient(135deg, #1a1a2e, #16213e) !important; }
+        body.dark-mode .dark-toggle { background: #667eea !important; }
+        body.dark-mode .dark-toggle:hover { background: #5a67d8 !important; }
+        body.dark-mode .login-box,
+        body.dark-mode .pick-card,
+        body.dark-mode .ai-card,
+        body.dark-mode .watchlist-box,
+        body.dark-mode .seasonal-box,
+        body.dark-mode .investment-box,
+        body.dark-mode .filters,
+        body.dark-mode .chart-container,
+        body.dark-mode .stock-card {
+            background: #1e1e3a !important;
+            color: #e8e8e8 !important;
+            border-color: #2a2a5e !important;
+        }
+        body.dark-mode .login-box input {
+            background: #2a2a5e !important;
+            color: #e8e8e8 !important;
+            border-color: #3a3a6e !important;
+        }
+        body.dark-mode .pick-card .name,
+        body.dark-mode .stock-card .s-name { color: #bbb !important; }
+        body.dark-mode .pick-card .sector-badge,
+        body.dark-mode .stock-card .s-sector { background: #2a2a5e !important; color: #ccc !important; }
+        body.dark-mode .stock-card .s-footer { color: #aaa !important; }
+        body.dark-mode .stock-card .s-updated { color: #777 !important; }
+        body.dark-mode .filters select,
+        body.dark-mode .filters input {
+            background: #2a2a5e !important;
+            color: #e8e8e8 !important;
+            border-color: #3a3a6e !important;
+        }
+        body.dark-mode .filters select option { background: #1e1e3a !important; }
+        body.dark-mode .investment-item { background: #2a2a5e !important; }
+        body.dark-mode .investment-item .ilabel { color: #aaa !important; }
+        body.dark-mode .investment-item .ivalue { color: #e8e8e8 !important; }
+        body.dark-mode .seasonal-card { background: #2a2a5e !important; }
+        body.dark-mode .seasonal-card .s-name { color: #bbb !important; }
+        body.dark-mode .chart-box { background: #2a2a5e !important; border-color: #3a3a6e !important; }
+        body.dark-mode .chart-box h4 { color: #e8e8e8 !important; }
+        body.dark-mode .watchlist-item { background: #2a2a5e !important; }
+        body.dark-mode .watchlist-item .wl-ticker,
+        body.dark-mode .watchlist-item .wl-price { color: #e8e8e8 !important; }
+        body.dark-mode .ai-card .ai-price strong,
+        body.dark-mode .ai-card .ai-detail strong { color: #fff !important; }
+        body.dark-mode .ai-card .ai-price { color: #ccc !important; }
+        body.dark-mode .ai-card .ai-detail { color: #ccc !important; }
+        body.dark-mode .ai-card .ai-footer { color: #888 !important; border-top-color: #3a3a6e !important; }
+        body.dark-mode .empty-watchlist,
+        body.dark-mode .loading,
+        body.dark-mode #lastUpdated { color: #888 !important; }
+        body.dark-mode .pick-card .rank { color: #888 !important; }
+        body.dark-mode .pick-card .price { color: #e8e8e8 !important; }
+        body.dark-mode .pick-card .target { color: #888 !important; }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 10px; text-align: center; }
+            .top-picks { grid-template-columns: 1fr; }
+            .ai-grid { grid-template-columns: 1fr; }
+            .stock-grid { grid-template-columns: 1fr; }
+            .filters { flex-direction: column; }
+            .filters select, .filters input { width: 100%; }
+            .investment-grid { grid-template-columns: 1fr 1fr; }
+            .seasonal-grid { grid-template-columns: 1fr; }
+            .watchlist-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- Login -->
+    <div id="loginScreen" class="login-box">
+        <h2>📊 Stock Scanner</h2>
+        <p style="text-align:center;color:#666;margin-bottom:20px;">Login to view predictions</p>
+        <input type="text" id="username" placeholder="Username" value="admin">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="login()">Login</button>
+        <div id="loginError" class="login-error">Invalid credentials!</div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="container hidden">
+        <div class="header">
+            <h1>📈 Stock Scanner Dashboard</h1>
+            <div class="header-actions">
+                <span class="update-badge">🔄 Auto-update: 15 min</span>
+                <button class="dark-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div id="lastUpdated" style="color:#666;font-size:14px;margin-bottom:10px;">Last updated: Loading...</div>
+
+        <!-- Top 3 Picks -->
+        <h2>🏆 Top 3 Picks Today</h2>
+        <div id="topPicks" class="top-picks"><div class="loading">Loading...</div></div>
+
+        <!-- AI Section -->
+        <div class="ai-box">
+            <h3>🤖 AI Stock Analysis</h3>
+            <div id="aiContainer" class="ai-grid"><div class="loading">Loading AI predictions...</div></div>
+        </div>
+
+        <!-- Watchlist -->
+        <div class="watchlist-box">
+            <h3>⭐ My Watchlist</h3>
+            <div id="watchlistContainer" class="watchlist-grid"><div class="loading">Loading watchlist...</div></div>
+        </div>
+
+        <!-- Seasonal -->
+        <div class="seasonal-box">
+            <h3>📅 Best Seasonal Stocks for <span id="currentMonth"></span></h3>
+            <div id="seasonalPicks" class="seasonal-grid"><div class="loading">Loading seasonal data...</div></div>
+        </div>
+
+        <!-- Investment -->
+        <div class="investment-box" id="investmentBox">
+            <h3>💰 ₹10,000 Investment Recommendation</h3>
+            <div id="investmentContent" class="investment-grid">
+                <div class="investment-item"><div class="ilabel">Recommended Stock</div><div class="ivalue" id="recStock">Loading...</div></div>
+                <div class="investment-item"><div class="ilabel">USD/INR Rate</div><div class="ivalue" id="usdInr">Loading...</div></div>
+                <div class="investment-item"><div class="ilabel">Final USD Amount</div><div class="ivalue highlight" id="usdAmount">Loading...</div></div>
+                <div class="investment-item"><div class="ilabel">TCS (5%)</div><div class="ivalue negative" id="tcsAmount">Loading...</div></div>
+                <div class="investment-item"><div class="ilabel">Shares</div><div class="ivalue" id="sharesEstimate">Loading...</div></div>
+                <div class="investment-item"><div class="ilabel">Withdrawal</div><div class="ivalue" id="withdrawalTime" style="font-size:13px;">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-container">
+            <h3>📊 Market Overview</h3>
+            <div class="chart-grid">
+                <div class="chart-box"><h4>Price by Sector</h4><canvas id="sectorChart"></canvas></div>
+                <div class="chart-box"><h4>Top 10 Changes</h4><canvas id="changeChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <select id="sectorFilter" onchange="applyFilters()"><option value="">All Sectors</option></select>
+            <input type="number" id="minPrice" placeholder="Min Price" onchange="applyFilters()">
+            <input type="number" id="maxPrice" placeholder="Max Price" onchange="applyFilters()">
+            <select id="ratingFilter" onchange="applyFilters()">
+                <option value="">All Ratings</option>
+                <option value="Buy">Buy</option>
+                <option value="Overweight">Overweight</option>
+                <option value="Hold">Hold</option>
+                <option value="Underweight">Underweight</option>
+                <option value="Sell">Sell</option>
+            </select>
+            <button onclick="fetchStocks()">🔄 Refresh</button>
+        </div>
+
+        <!-- All Stocks -->
+        <h2>📊 All Stocks</h2>
+        <div id="stockList" class="stock-grid"><div class="loading">Loading stocks...</div></div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // CONFIGURATION
+    // ============================================================
+    const API_BASE = 'https://gayathiriportfolio.xyz/stockscanner/api';
+    let allStocks = [];
+    let sectorChart = null;
+    let changeChart = null;
+    let watchlist = [];
+
+    // ============================================================
+    // SESSION MANAGEMENT
+    // ============================================================
+    if (sessionStorage.getItem('stock_scanner_session') === 'logged_in') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').classList.remove('hidden');
+        loadDashboard();
+    }
+
+    function saveSession() { sessionStorage.setItem('stock_scanner_session', 'logged_in'); }
+    function clearSession() { sessionStorage.removeItem('stock_scanner_session'); }
+
+    // ============================================================
+    // LOGIN / LOGOUT
+    // ============================================================
+    async function login() {
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+        try {
+            const r = await fetch(`${API_BASE}/login`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({username:u, password:p})
+            });
+            const d = await r.json();
+            if (d.success) {
+                saveSession();
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').classList.remove('hidden');
+                loadDashboard();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        } catch(e) {
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
+
+    function logout() {
+        clearSession();
+        document.getElementById('loginScreen').style.display = 'block';
+        document.getElementById('dashboard').classList.add('hidden');
+    }
+
+    function loadDashboard() {
+        fetchStocks();
+        fetchPredictions();
+        fetchSeasonal();
+        fetchInvestment();
+        loadWatchlist();
+        updateLastUpdated();
+        displayAIAnalysis();
+        document.getElementById('currentMonth').textContent = new Date().toLocaleString('default', { month: 'long' });
+    }
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    function getMainSector(s) {
+        if (!s) return 'Other';
+        const m = {
+            'Technology': 'Technology',
+            'Healthcare': 'Healthcare',
+            'Financial': 'Financial',
+            'Consumer': 'Consumer',
+            'Industrial': 'Industrial',
+            'Energy': 'Energy',
+            'Telecom': 'Telecom'
+        };
+        for (let k of Object.keys(m)) {
+            if (s.toLowerCase().includes(k.toLowerCase())) return k;
+        }
+        return s;
+    }
+
+    function getRatingColor(r) {
+        const map = {
+            'Buy': '#28a745',
+            'Overweight': '#17a2b8',
+            'Hold': '#ffc107',
+            'Underweight': '#fd7e14',
+            'Sell': '#dc3545'
+        };
+        return map[r] || '#6c757d';
+    }
+
+    function getStrengthClass(s) {
+        if (s >= 70) return 'strength-high';
+        if (s >= 40) return 'strength-medium';
+        return 'strength-low';
+    }
+
+    // ============================================================
+    // API CALLS
+    // ============================================================
+    async function fetchStocks() {
+        try {
+            const s = document.getElementById('sectorFilter').value;
+            const min = document.getElementById('minPrice').value;
+            const max = document.getElementById('maxPrice').value;
+            const r = document.getElementById('ratingFilter').value;
+            let url = `${API_BASE}/stocks?`;
+            if (s) url += `sector=${s}&`;
+            if (min) url += `min_price=${min}&`;
+            if (max) url += `max_price=${max}&`;
+            if (r) url += `rating=${r}&`;
+            const response = await fetch(url);
+            const data = await response.json();
+            allStocks = data.stocks || [];
+            displayStocks(allStocks);
+            updateCharts(allStocks);
+            updateLastUpdated();
+            updateSectorFilter(allStocks);
+        } catch(e) { console.error(e); }
+    }
+
+    async function fetchPredictions() {
+        try {
+            const r = await fetch(`${API_BASE}/predictions`);
+            const d = await r.json();
+            displayPredictions(d.top_picks || []);
+        } catch(e) {}
+    }
+
+    async function fetchSeasonal() {
+        try {
+            const r = await fetch(`${API_BASE}/seasonal`);
+            const d = await r.json();
+            displaySeasonal(d.seasonal_picks || []);
+        } catch(e) {}
+    }
+
+    async function fetchInvestment() {
+        try {
+            const r = await fetch(`${API_BASE}/investment`);
+            const d = await r.json();
+            displayInvestment(d);
+        } catch(e) {}
+    }
+
+    // ============================================================
+    // WATCHLIST
+    // ============================================================
+    async function loadWatchlist() {
+        try {
+            const r = await fetch(`${API_BASE}/watchlist/admin`);
+            const d = await r.json();
+            watchlist = d || [];
+            displayWatchlist();
+        } catch(e) {
+            document.getElementById('watchlistContainer').innerHTML = '<div class="loading">Error loading watchlist</div>';
+        }
+    }
+
+    function displayWatchlist() {
+        const container = document.getElementById('watchlistContainer');
+        if (!container) return;
+        if (!watchlist || watchlist.length === 0) {
+            container.innerHTML = '<div class="empty-watchlist">⭐ No stocks in watchlist. Click ⭐ on any stock to add!</div>';
+            return;
+        }
+        container.innerHTML = watchlist.map(stock => `
+            <div class="watchlist-item">
+                <span class="wl-ticker">${stock.ticker}</span>
+                <span class="wl-price">$${stock.price || 'N/A'}</span>
+                <span class="wl-change ${stock.change > 0 ? 'up' : 'down'}">${stock.change > 0 ? '+' : ''}${stock.change || 0}%</span>
+                <span class="wl-rating" style="background:${getRatingColor(stock.analyst_rating)};">${stock.analyst_rating || 'Hold'}</span>
+                <button class="wl-remove" onclick="removeFromWatchlist('${stock.ticker}')" title="Remove">✕</button>
+            </div>
+        `).join('');
+    }
+
+    async function addToWatchlist(ticker) {
+        try {
+            const r = await fetch(`${API_BASE}/watchlist/add`, {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({username:'admin', ticker})
+            });
+            const d = await r.json();
+            alert(d.message);
+            if (d.success) loadWatchlist();
+        } catch(e) {
+            alert('Error adding to watchlist');
+        }
+    }
+
+    async function removeFromWatchlist(ticker) {
+        try {
+            const r = await fetch(`${API_BASE}/watchlist/remove`, {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({username:'admin', ticker})
+            });
+            const d = await r.json();
+            alert(d.message);
+            loadWatchlist();
+        } catch(e) {
+            alert('Error removing from watchlist');
+        }
+    }
+
+    // ============================================================
+    // DISPLAY FUNCTIONS
+    // ============================================================
+    function displayPredictions(picks) {
+        const c = document.getElementById('topPicks');
+        if (!picks.length) { c.innerHTML = '<div class="loading">No predictions</div>'; return; }
+        c.innerHTML = picks.map((s,i) => `
+            <div class="pick-card">
+                <div class="rank">#${i+1} | Score: ${s.prediction_score||0}</div>
+                <div class="ticker">${s.ticker}</div>
+                <div class="name">${s.name}</div>
+                <div class="price">$${s.price||'N/A'}</div>
+                <div class="${s.change > 0 ? 'change-up' : 'change-down'}">${s.change > 0 ? '+' : ''}${s.change||0}%</div>
+                <div style="margin-top:5px;">
+                    <span class="sector-badge">${getMainSector(s.sector)}</span>
+                    <span class="rating-badge" style="background:${getRatingColor(s.analyst_rating)};">${s.analyst_rating||'Hold'}</span>
+                    <span class="score">Score: ${s.prediction_score||0}</span>
+                </div>
+                <div class="target">Target: $${s.avg_target||'N/A'}</div>
+            </div>
+        `).join('');
+    }
+
+    function displaySeasonal(picks) {
+        const c = document.getElementById('seasonalPicks');
+        if (!picks || picks.length === 0) {
+            c.innerHTML = '<div class="loading">No seasonal data available</div>';
+            return;
+        }
+        c.innerHTML = picks.slice(0,6).map(s => `
+            <div class="seasonal-card">
+                <div class="s-ticker">${s.ticker}</div>
+                <div class="s-name">${s.name}</div>
+                <div class="s-best">✅ Best: ${s.best_month||'N/A'} (+${s.best_return||0}%)</div>
+                <div class="s-worst">❌ Worst: ${s.worst_month||'N/A'} (${s.worst_return||0}%)</div>
+                <div><span class="s-strength ${getStrengthClass(s.seasonal_strength)}">Strength: ${s.seasonal_strength||50}/100</span></div>
+            </div>
+        `).join('');
+    }
+
+    function displayInvestment(d) {
+        if (!d || d.error) {
+            document.getElementById('investmentBox').style.display = 'none';
+            return;
+        }
+        document.getElementById('recStock').textContent = d.recommended_stock || 'N/A';
+        document.getElementById('usdInr').textContent = d.usd_inr_rate || 'N/A';
+        document.getElementById('usdAmount').textContent = '$' + (d.final_usd || d.usd_amount || 0);
+        document.getElementById('tcsAmount').textContent = '₹' + (d.tcs_amount || 0);
+        document.getElementById('sharesEstimate').textContent = d.shares_estimate || 0;
+        document.getElementById('withdrawalTime').textContent = d.withdrawal_time || 'N/A';
+    }
+
+    function displayStocks(stocks) {
+        const c = document.getElementById('stockList');
+        if (!stocks.length) { c.innerHTML = '<div class="loading">No stocks found</div>'; return; }
+        c.innerHTML = stocks.map(s => `
+            <div class="stock-card">
+                <button class="star" onclick="addToWatchlist('${s.ticker}')" title="Add to watchlist">⭐</button>
+                <div class="s-ticker">${s.ticker}</div>
+                <div class="s-name">${s.name}</div>
+                <div class="s-price">$${s.price||'N/A'}</div>
+                <div class="s-change ${s.change > 0 ? 'up' : 'down'}">${s.change > 0 ? '+' : ''}${s.change||0}%</div>
+                <div>
+                    <span class="s-sector">${getMainSector(s.sector)}</span>
+                    <span class="s-rating" style="background:${getRatingColor(s.analyst_rating)};">${s.analyst_rating||'Hold'}</span>
+                </div>
+                <div class="s-footer">Target: $${s.avg_target||'N/A'} | Score: ${s.prediction_score||0}</div>
+                <div class="s-updated">${s.updated_at ? new Date(s.updated_at).toLocaleString() : 'N/A'}</div>
+            </div>
+        `).join('');
+    }
+
+    function updateSectorFilter(stocks) {
+        const sectors = new Set();
+        stocks.forEach(s => { sectors.add(getMainSector(s.sector)); });
+        const sel = document.getElementById('sectorFilter');
+        while (sel.options.length > 1) sel.remove(1);
+        Array.from(sectors).sort().forEach(s => {
+            const o = document.createElement('option');
+            o.value = s;
+            o.textContent = s;
+            sel.appendChild(o);
+        });
+    }
+
+    function updateCharts(stocks) {
+        if (!stocks || stocks.length === 0) return;
+        const groups = {};
+        stocks.forEach(s => {
+            const ms = getMainSector(s.sector);
+            if (!groups[ms]) groups[ms] = [];
+            groups[ms].push(s);
+        });
+        const names = Object.keys(groups);
+        const counts = names.map(n => groups[n].length);
+        const colors = ['#667eea','#28a745','#ffc107','#dc3545','#6f42c1','#17a2b8','#fd7e14'];
+        if (sectorChart) sectorChart.destroy();
+        sectorChart = new Chart(document.getElementById('sectorChart'), {
+            type: 'doughnut',
+            data: { labels: names, datasets: [{ data: counts, backgroundColor: colors.slice(0,names.length), borderColor: '#fff', borderWidth: 2 }] },
+            options: { responsive: true, plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } }
+        });
+        const sorted = [...stocks].sort((a,b) => (b.change||0) - (a.change||0)).slice(0,10);
+        if (changeChart) changeChart.destroy();
+        changeChart = new Chart(document.getElementById('changeChart'), {
+            type: 'bar',
+            data: {
+                labels: sorted.map(s => s.ticker),
+                datasets: [{ label: 'Change %', data: sorted.map(s => s.change||0), backgroundColor: sorted.map(s => s.change>0 ? '#28a745' : '#dc3545') }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+
+    async function updateLastUpdated() {
+        try {
+            const r = await fetch(`${API_BASE}/last-updated`);
+            const d = await r.json();
+            if (d.last_updated) {
+                const dt = new Date(d.last_updated);
+                document.getElementById('lastUpdated').textContent = `Last updated: ${dt.toLocaleString()}`;
+            } else {
+                document.getElementById('lastUpdated').textContent = `Last updated: N/A`;
+            }
+        } catch(e) {
+            document.getElementById('lastUpdated').textContent = `Last updated: Error`;
+        }
+    }
+
+    function applyFilters() { fetchStocks(); }
+
+    // ============================================================
+    // AI FEATURES
+    // ============================================================
+    async function displayAIAnalysis() {
+        const container = document.getElementById('aiContainer');
+        if (!container) return;
+
+        if (!allStocks || allStocks.length === 0) {
+            container.innerHTML = '<div class="loading">Waiting for data...</div>';
+            setTimeout(displayAIAnalysis, 2000);
+            return;
+        }
+
+        const topStocks = allStocks.filter(s => s.price > 0).slice(0, 5);
+        if (!topStocks.length) {
+            container.innerHTML = '<div class="loading">No stock data available</div>';
+            return;
+        }
+
+        container.innerHTML = '<div class="loading">Analyzing stocks...</div>';
+        let html = '';
+        for (const stock of topStocks) {
+            try {
+                const pred = await fetch(`${API_BASE}/ai/predict/${stock.ticker}`).then(r => r.json());
+                const risk = await fetch(`${API_BASE}/risk/${stock.ticker}`).then(r => r.json());
+                const backtest = await fetch(`${API_BASE}/backtest/${stock.ticker}`).then(r => r.json());
+
+                if (pred && !pred.error) {
+                    const signalColor = pred.signal === 'BUY' ? '#28a745' :
+                                       pred.signal === 'SELL' ? '#dc3545' : '#ffc107';
+
+                    html += `
+                        <div class="ai-card">
+                            <div class="ai-header">
+                                <span class="ai-ticker">${stock.ticker}</span>
+                                <span style="background:${signalColor};color:#fff;padding:3px 14px;border-radius:20px;font-size:12px;font-weight:700;">${pred.signal || 'HOLD'}</span>
+                            </div>
+                            <div class="ai-price">
+                                <strong>Price:</strong> $${pred.current_price || stock.price}
+                                → <strong>Predicted:</strong> $${pred.predicted_price}
+                                <span style="font-size:11px;color:#888;">(Confidence: ${pred.confidence}%)</span>
+                            </div>
+                            ${risk && !risk.error ? `
+                                <div class="ai-detail">
+                                    <strong>Risk:</strong> ${risk.risk_score}/100 (${risk.risk_level})
+                                    | <strong>Volatility:</strong> ${risk.volatility}%
+                                </div>
+                            ` : ''}
+                            ${backtest && !backtest.error ? `
+                                <div class="ai-detail">
+                                    <strong>Backtest:</strong> ${backtest.total_return}% return
+                                    | <strong>Win Rate:</strong> ${backtest.win_rate}%
+                                </div>
+                            ` : ''}
+                            <div class="ai-footer">
+                                ${getMainSector(stock.sector)} • Target: $${stock.avg_target || 'N/A'}
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch(e) {
+                console.error(`AI error for ${stock.ticker}:`, e);
+            }
+        }
+
+        container.innerHTML = html || '<div class="loading">No AI data available</div>';
+    }
+
+    // ============================================================
+    // DARK MODE
+    // ============================================================
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const btn = document.querySelector('.dark-toggle');
+        if (document.body.classList.contains('dark-mode')) {
+            btn.textContent = '☀️ Light Mode';
+            localStorage.setItem('darkMode', 'enabled');
+        } else {
+            btn.textContent = '🌙 Dark Mode';
+            localStorage.setItem('darkMode', 'disabled');
+        }
+    }
+
+    if (localStorage.getItem('darkMode') === 'enabled') {
+        document.body.classList.add('dark-mode');
+        const btn = document.querySelector('.dark-toggle');
+        if (btn) btn.textContent = '☀️ Light Mode';
+    }
+
+    // ============================================================
+    // AUTO-UPDATE (Every 5 Minutes = 300,000 ms)
+    // ============================================================
+    setInterval(() => {
+        if (sessionStorage.getItem('stock_scanner_session') === 'logged_in') {
+            fetchStocks();
+            loadWatchlist();
+        }
+    }, 900000); // 15 minutes
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') {
+            login();
+        }
+    });
+</script>
+
+</body>
+</html>
