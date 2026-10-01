@@ -9,7 +9,7 @@ import random
 app = Flask(__name__, static_folder='static')
 CORS(app)
 
-DB_PATH = '/home2/thekidsw/gayathiriportfolio.xyz/stockscanner/stocks.db'
+DB_PATH = os.path.join(os.path.dirname(__file__), 'stocks.db')
 
 def get_live_usd_inr():
     try:
