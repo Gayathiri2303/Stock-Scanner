@@ -9,7 +9,8 @@ import random
 app = Flask(__name__, static_folder='static')
 CORS(app)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'stocks.db')
+# ✅ FIXED: Use relative path to stocks.db (works on Vercel)
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stocks.db')
 
 def get_live_usd_inr():
     try:
@@ -97,26 +98,22 @@ def get_predictions():
         return jsonify({"error": str(e), "top_picks": []}), 500
 
 # ============================================================
-# API: SEASONAL STOCKS - FIXED
+# API: SEASONAL STOCKS
 # ============================================================
 @app.route('/api/seasonal')
 def get_seasonal():
     try:
         conn = get_db_connection()
-        
-        # Simple query - no WHERE filter
         stocks = conn.execute('''
             SELECT ticker, name, sector, price, `change`,
                    best_month, best_return, worst_month, worst_return, seasonal_strength
             FROM stocks
             LIMIT 20
         ''').fetchall()
-        
         conn.close()
         
         result = []
         for row in stocks:
-            # Check if this stock has seasonal data
             if row['best_month'] and row['seasonal_strength']:
                 result.append({
                     'ticker': row['ticker'],
@@ -131,9 +128,7 @@ def get_seasonal():
                     'seasonal_strength': row['seasonal_strength']
                 })
         
-        # Sort by strength descending
         result.sort(key=lambda x: x['seasonal_strength'], reverse=True)
-        
         return jsonify({"seasonal_picks": result[:10]})
     except Exception as e:
         return jsonify({"error": str(e), "seasonal_picks": []}), 500
@@ -163,7 +158,7 @@ def get_investment():
                 SELECT ticker, price, avg_target, prediction_score, analyst_rating
                 FROM stocks WHERE price > 0
                 ORDER BY prediction_score DESC LIMIT 1
-        ''').fetchone()
+            ''').fetchone()
         conn.close()
         if top:
             usd_inr = get_live_usd_inr()
@@ -193,7 +188,7 @@ def get_investment():
         return jsonify({"error": str(e)}), 500
 
 # ============================================================
-# API: LOGIN
+# API: LAST UPDATED
 # ============================================================
 @app.route('/api/last-updated')
 def get_last_updated():
@@ -205,6 +200,9 @@ def get_last_updated():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ============================================================
+# API: LOGIN
+# ============================================================
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -278,9 +276,8 @@ def get_stock(ticker):
         return jsonify({"error": str(e)}), 500
 
 # ============================================================
-# AI FEATURES (Simple - No Heavy Libraries)
+# AI FEATURES
 # ============================================================
-
 @app.route('/api/ai/predict/<ticker>')
 def ai_predict(ticker):
     try:
